@@ -2,8 +2,11 @@
 # ------------------------------------------------------------------------------
 # Load Data and Libraries
 # ------------------------------------------------------------------------------
-source("data_upload_with_zeros.R")
-source("feature_selections.R")
+source("R/data_prep.R")
+data.x <- get_us_data(keep_zeros = TRUE)
+data <- data.x
+five_features <- attr(data.x, "five_features")
+ten_features <- attr(data.x, "ten_features")
 
 library(brms)
 library(ggplot2)
