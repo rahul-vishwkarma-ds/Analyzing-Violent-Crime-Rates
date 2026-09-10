@@ -1,97 +1,68 @@
-# Applied Bayesian Data Analysis
+# Analyzing Violent Crime Rates in U.S. Communities
 
-## Dataset
+**Applied Bayesian Data Analysis Project**
 
-[Communities and Crime dataset](https://archive.ics.uci.edu/dataset/183/communities+and+crime)
+This repository contains the code and report for our group project on modeling violent crime rates using Hierarchical and Spatial Bayesian Regression. The study explores the benefits of incorporating hierarchy and spatial dependencies into regression models to address complex data structures.
 
-### Key Features:
+## 📌 Project Overview
 
--   **Size**: 1994 observations with 122 attributes.
--   **Target Variable**: `ViolentCrimesPerPop` (Per capita violent crime rate, normalized between 0 and 1).
--   **Attributes**: Socio-economic indicators, demographic proportions, law enforcement statistics, and more.
--   **Missing Values**: Exist
+Traditional regression models often fail to capture key patterns when observations are influenced by group membership or spatial dependencies. In this project, we compared the predictive performance of several Bayesian models using a dataset of U.S. communities.
 
-------------------------------------------------------------------------
+We evaluated five different Bayesian models using the `brms` package powered by Stan: 1. **Pooled Model (Beta Regression)** 2. **Zero-One Inflated Beta Model** (To handle boundary limits of pre-normalized data) 3. **Hierarchical Model** (To account for state-level variations across the US) 4. **Cubic Splines Model** (Spatial analysis restricted to California) 5. **Gaussian Process Model** (Advanced spatial analysis restricted to California)
 
-## Model
+## 📊 Dataset
 
-**Bayesian Beta Regression** model for the response variable (`ViolentCrimesPerPop`) constrained to [0, 1].
+The dataset combines socioeconomic data from the 1990 US Census, law enforcement data from the 1990 US LEMAS survey, and crime data from the 1995 FBI UCR. - **Target Variable:** Per Capita Violent Crimes (Normalized between `0` and `1`). - **Predictors Used:** `PctKids2Par`, `PctIlleg`, `PctFam2Par`, `racePctWhite`, `PctYoungKids2Par`. - **Spatial Data:** Longitude and Latitude (used for California-specific models).
 
-### Model Assumptions
+## 🎯 Key Findings
 
-1.  The **response variable** (`y`) follows a **Beta distribution** with shape parameters `a` and `b`.
-2.  Predictors are linearly related to the logit-transformed mean of the response variable.
-3.  Observations are independent.
+- **Hierarchical Modeling:** Accounting for state-level variation significantly improved predictive performance (ELPD) over the simple pooled model.
+- **Spatial Dependencies:** For the California subset, the Gaussian Process model demonstrated superior performance over the Cubic Splines model.
+- **Zero-One Inflation:** Explicitly modeling the boundary values (`0` and `1`) improved the model fit but came with extreme computational costs.
+- **Limitations:** All models exhibited a persistent residual pattern—overestimating low crime rates and underestimating high crime rates—suggesting that the pre-normalization of the dataset severely limits interpretability.
 
-### Model Specification
+## 📂 Repository Structure
 
-#### Mean of the Beta Distribution
-
-The mean (`mu`) is modeled as:
-
-```         
-mu = logit^-1(alpha + beta1 * x1 + beta2 * x2 + beta3 * x3 + beta4 * x4 + beta5 * x5)
+``` text
+.
+├── Analyzing-Violent-Crime-Rates.Rproj   # RStudio Project File
+├── README.md                             # Project documentation
+├── data/                                 # Data directory
+│   ├── raw_data/                         # Original raw datasets (read-only)
+│   ├── processed_data/                   # Cleaned/processed datasets (cached here)
+│   └── metadata/                         # Data documentation
+├── R/                                    # Reusable logic modules
+│   ├── data_prep.R                       # Data cleaning and caching pipeline
+│   ├── maps.R                            # Spatial mapping utilities
+│   └── models/                           # Standardized Bayesian model scripts
+│       ├── cs_model.R                    # Cubic Splines
+│       ├── gp_model.R                    # Gaussian Process
+│       ├── hierarchical_model.R          # Hierarchical
+│       ├── pooled_model_5.R              # Pooled
+│       ├── zero-one-inflated.R           # Zero-One Inflated
+│       └── compare_models.R              # Generates LOO/PMP comparison metrics
+├── scripts/                              # Top-level execution scripts
+│   └── run_analysis.R                    # Main script to run models and cache data
+├── manuscript/                           # LaTeX source code and static report images
+└── output/                               # Generated results (git-ignored)
+    ├── figures/                          # Trace plots, residual plots, PPCs
+    └── models/                           # Saved .rds model checkpoints and summaries
 ```
 
-Where: - `alpha`: Intercept - `beta1`, `beta2`, ..., `beta5`: Coefficients for predictors (`x1`, `x2`, ..., `x5`).
+## 🚀 How to Run
 
-#### Shape Parameters
+1.  **Install Dependencies:** Make sure you have `brms`, `rstan`, `caret`, and `randomForest` installed.
+2.  **Run the Project:** You can execute all data caching, preprocessing, and Bayesian models from a single central script by running `source("scripts/run_analysis.R")`. This script intelligently caches your dataset to `data/processed_data/` so that subsequent model runs load instantly.
+3.  **Compare Models:** After the models have successfully completed and saved their `.rds` checkpoints, run `source("R/models/compare_models.R")` to calculate LOO cross-validation and compute posterior model weights.
 
-The shape parameters of the Beta distribution are:
+## 🛠️ Technologies & Libraries
 
-```         
-a = mu * phi
-b = (1 - mu) * phi
-```
+- **Language:** R
+- **Bayesian Framework:** `brms`, `Stan`, `loo`
+- **Other Key Packages:** `dplyr`, `ggplot2`, `caret`
 
-Where: - `phi`: Precision parameter, representing the concentration of the Beta distribution.
+## 👨‍💻 Authors
 
-#### Likelihood
+**Group 31** - Lennart Koppe - Rahul Vishwkarma - Samuel Trippler
 
-The likelihood of the observed data:
-
-```         
-y ~ Beta(a, b)
-```
-
-------------------------------------------------------------------------
-
-## Variables
-
-### Response Variable
-
--   **`ViolentCrimesPerPop`**: Normalized violent crime rate, calculated as the ratio of violent crimes (murder, rape, robbery, and assault) to the population.
-
-### Predictors
-
-Selected predictors include: - **`PctKids2Par`**: Percentage of children in two-parent households. - **`PctImmigRec10`**: Percentage of recent immigrants (last 10 years). - **`PctPopUnderPov`**: Percentage of the population under poverty. - **`medFamInc`**: Median family income. - **`racePctWhite`**: Percentage of white population.
-
-------------------------------------------------------------------------
-
-## Limitations
-
-1.  **Linear Assumptions**:
-
-    -   The model assumes a linear relationship between predictors and the logit-transformed response.
-    -   Nonlinear effects or interactions are not captured.
-
-2.  **Feature Selection**:
-
-    -   Only a subset of predictors is used.
-
-3.  **Missing Communities**
-
-4.  **Recorded crimes**
-
-    -   Not all types of crime are recorded in dataset
-
-
-
-*Summary*
-- Developed and compared pooled, hierarchical, and spatial Bayesian models using brms and Stan to analyze violent crime across 1,900+ U.S. communities.
-
-- Improved in-sample predictive performance by 18% and out-of-sample accuracy by 12.5% by modeling state-level variation, reducing underfitting and bias in U.S. communities.
-
-- Improved spatial prediction in California by implementing Gaussian process models that outperformed cubic splines, boosting in-sample predictive performance by 29.5% and out-of-sample accuracy by 20%.
-
-- Validated models through ELPD, posterior predictive checks, residual diagnostics, and MCMC convergence, ensuring statistical robustness and interpretability.
+*TU Dortmund University - March 2025*

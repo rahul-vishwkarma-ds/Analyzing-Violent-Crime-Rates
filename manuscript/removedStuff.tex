@@ -1,0 +1,58 @@
+{\color{cyan}
+For models without spatial structures, we treat observations as independent, which is reasonable given the considerable distance between most individual communities. Since the target variable values lie between $0$ and $1$, we model it as beta-distributed: $Y \sim \text{Beta}(a, b)$. Furthermore, the predictor variables are expected to be linearly related to the logit-transformed mean of $y$, which is demonstrated by \autoref{fig:scatlogit}. The logit function is defined as $logit(\mu) = ln(\frac{\mu}{1-\mu})$, where $\mu$ stands for the mean of $y$. However, as shown in \autoref{fig:crimerate}, some values are exactly $0$ or $1$, which poses a challenge for beta regression since the beta distribution is only defined for $(0,1)$. To address this, we applied two different approaches. The first was to adjust the data by adding a small constant, $1\cdot10^{-6}$, to observations equal to $0$ and subtracting the same amount from those equal to $1$. The second was to use zero-one inflated beta regression, which explicitly accounts for boundary values.
+
+
+The general structure of the pooled model that ignores state-level variation is $$\text{logit}(\mu) = \alpha + \sum_{i=1}^N{\beta_i \cdot x_i}$$ where $N$ is the number of predictors, $\beta_i$ is the coefficient associated with predictor $x_i$, and $\alpha$ is the intercept. To model $Y$ as beta-distributed, we express the shape parameters in terms of the mean $\mu$ and the precision parameter $\phi$: $$a = \mu \cdot \phi, \ b = (1 - \mu) \cdot \phi.$$ 
+This parameterization ensures that $Y$ follows a beta distribution: $$Y \sim \text{Beta}(a, b),$$
+where $\mu$ indicates the mean value of the beta distribution and the precision parameter determines how concentrated the beta distribution is around $\mu$. A higher value for $\phi$ indicates a lower variance of the beta distribution and vice versa.
+
+To account for state-level variation, the hierarchical model extends the pooled model by introducing state-specific intercepts $\alpha_j$ and state-specific slopes $\beta_{ij}$, yielding 46 separate state-based equations: $$\text{logit}(\mu_j) = \alpha_j + \sum_{i=1}^N{\beta_{ij} \cdot x_i}.$$ Here, $\alpha_j$ represents the intercept for state $j$, and 
+$\beta_{ij}$ allows the effect of predictor $x_i$ to vary by state.
+
+To incorporate spatial dependencies into our models for California, our first idea was to use cubic splines:
+
+$$\text{logit}(\mu) = \alpha + \sum_{i=1}^N{\beta_i \cdot x_i} + \sum_{j=1}^K{\gamma_j \cdot \text{relu}{(x_{N+1} -k_{1j})}^3 + \delta_j \cdot \text{relu}{(x_{N+2} - k_{2j})}^3}$$ where $K$ is the number of knots, and $k_{1j}$ and $k_{2j}$ are the knot locations for longitude $x_{N+1}$ and latitude $x_{N+2}$, respectively. We set $K = 4$ and placed the knots at the quartiles of the longitude and latitude variables as quartiles naturally serve as cluster points.
+
+Our second idea was to replace splines with a more flexible Gaussian Process (GP), which does not require predefined knots and instead learns spatial dependencies directly from the data. In this approach, we model the spatial effect \( f(x_{N+1}, x_{N+2}) \) as a latent function drawn from a Gaussian Process prior \parencite{gp}:  
+
+\[
+f(x_{N+1}, x_{N+2}) \sim \mathcal{GP}(0, k((x_{N+1}, x_{N+2}), (x_{N+1}', x_{N+2}')))
+\]
+
+where \( k(\cdot, \cdot) \) is a covariance function that defines how similar two locations are based on their distance. The default kernel in brms is the Radial Basis Function (RBF) \parencite{gp}:  
+
+\[
+k(x, x') = \sigma^2 \exp\left(-\frac{||x - x'||^2}{2\ell^2}\right)
+\]
+
+where \( \sigma^2 \) controls the variance of the spatial effect, and \( \ell \) (the length scale) determines how quickly spatial correlations decay.  
+}
+
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\section{Priors}
+
+Choosing explicit proper priors instead of relying on default priors is crucial for several reasons. First, default priors may not align with domain knowledge, whereas carefully chosen priors ensure that parameter estimates remain realistic. Second, improper or weakly informative priors can lead to unidentifiable models, overfitting, or computational instability in MCMC sampling. Proper priors also improve uncertainty quantification by shrinking estimates toward plausible values and preventing extreme parameter estimates.
+
+In our models, selecting normal priors centered at zero for the predictor coefficients is reasonable since these coefficients represent the effect of a predictor on the target variable, which can be either positive or negative. Additionally, the prior variance should not be too large, as it is unlikely that any single predictor among the 122 candidates has an extremely strong effect. For this reason, we chose $\beta_i \sim \mathcal{N}(0,16)$. 
+
+Applying the same prior to the intercept $\alpha$ would introduce a slight bias. To see why, consider the general structure of the pooled model with a logit link function, which can be rewritten as:
+\[
+\mu = logit^{-1}(\alpha + \sum_{i=1}^N{\beta_i \cdot x_i}),
+\]
+where $logit^{-1}$ is the inverse logit function, also known as the $expit$ function. In the absence of predictor variables, setting $\alpha = 0$ results in an estimated mean of $\mu = logit^{-1}(0) = \frac{1}{1+e^{0}} = 0.5$. This assumption may not align well with the actual distribution of the target variable.
+
+To address this issue, we conducted prior predictive checks, initially testing a $\mathcal{N}(0,1)$ prior, which confirmed that this prior was not reasonable. After further refinement, we settled on a $\mathcal{N}(-1.4,0.01)$ prior, which better aligned with the expected distribution of $\mu$.
+
+For the precision parameter $\phi$, we use a gamma prior $\phi \sim \text{Gamma}(2,0.1)$. The gamma distribution ensures positivity and this choice allows for a wide range of variance around the mean $\mu$, preventing overly restrictive assumptions about dispersion. 
+
+In our hierarchical model, we place priors on the standard deviations $\tau_\alpha$ and $\tau_{\beta_i}$, which control the variation of state-level intercepts $\alpha_j$ and slopes $\beta_{ij}$. To ensure positivity, we use an exponential prior and, based on prior predictive checks, choose $\tau_\alpha, \tau_{\beta_i} \sim \mathcal{E}(3)$.
+
+Lastly, we our Gaussian process model 
