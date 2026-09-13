@@ -1,0 +1,31 @@
+ Family: beta 
+  Links: mu = logit 
+Formula: ViolentCrimesPerPop ~ s(Latitude_scaled, bs = "cs") + s(Longitude_scaled, bs = "cs") + PctKids2Par + PctIlleg + PctFam2Par + racePctWhite + PctYoungKids2Par 
+   Data: data (Number of observations: 278) 
+  Draws: 4 chains, each with iter = 4000; warmup = 2000; thin = 1;
+         total post-warmup draws = 8000
+
+Smoothing Spline Hyperparameters:
+                         Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS
+sds(sLatitude_scaled_1)      0.00      0.00     0.00     0.01 1.00     2534
+sds(sLongitude_scaled_1)     0.00      0.00     0.00     0.01 1.00     4070
+                         Tail_ESS
+sds(sLatitude_scaled_1)      1500
+sds(sLongitude_scaled_1)     4187
+
+Regression Coefficients:
+                 Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept            1.54      0.53     0.51     2.61 1.00     4271     1657
+PctKids2Par         -0.82      0.76    -2.28     0.67 1.00     7510     5531
+PctIlleg             2.29      0.50     1.29     3.25 1.00     3752     1577
+PctFam2Par          -2.31      0.72    -3.71    -0.89 1.00     6471     4641
+racePctWhite        -0.84      0.30    -1.42    -0.24 1.00     7343     5747
+PctYoungKids2Par    -0.50      0.59    -1.68     0.68 1.00     5991     4161
+
+Further Distributional Parameters:
+    Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+phi     4.32      0.34     3.68     5.01 1.00     9351     5618
+
+Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
+and Tail_ESS are effective sample size measures, and Rhat is the potential
+scale reduction factor on split chains (at convergence, Rhat = 1).

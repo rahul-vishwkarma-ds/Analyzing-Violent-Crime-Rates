@@ -24,11 +24,11 @@ cali_data <- get_california_data()
 # source("R/models/pooled_model_5.R")
 # source("R/models/pooled_model_10.R")
 # source("R/models/hierarchical_model.R")
-source("R/models/zero-one-inflated.R")
+# source("R/models/zero-one-inflated.R")
 
 # --- California Spatial Models ---
-# source("R/models/gp_model.R")
-# source("R/models/cs_model.R")
+source("R/models/gp_model.R")
+source("R/models/cs_model.R")
 
 # ------------------------------------------------------------------------------
 # 3. Compare Models

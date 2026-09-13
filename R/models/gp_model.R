@@ -127,7 +127,7 @@ saveRDS(gp_pd, file = "output/models/gp_pd.rds")
 # ------------------------------------------------------------------------------
 y_pred_gp <- posterior_predict(fit_gp)
 y_pred_mean_gp <- colMeans(y_pred_gp)
-y_obs_gp <- fit_gp$data$y
+y_obs_gp <- fit_gp$data$ViolentCrimesPerPop
 residuals_gp <- y_obs_gp - y_pred_mean_gp
 data_plot_gp <- data.frame(y_obs = y_obs_gp, residuals = residuals_gp)
 
